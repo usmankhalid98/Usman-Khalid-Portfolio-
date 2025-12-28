@@ -210,10 +210,6 @@ const Skills = () => {
             strategic business growth.
           </p>
         </div>
-        <div className="hidden lg:block text-right">
-          <div className="text-sm font-mono text-blue-600 font-black mb-1 tracking-tighter">// STRATEGY_STACK</div>
-          <div className="text-[10px] text-slate-400 uppercase font-black">System Version 2.5</div>
-        </div>
       </div>
       
       <div className="grid md:grid-cols-2 gap-8">
@@ -415,7 +411,7 @@ const Contact = () => {
 const Footer = () => (
   <footer className="py-12 border-t border-slate-300/50 text-center text-slate-500 text-xs font-black uppercase tracking-widest bg-slate-100/30">
     <div className="max-w-7xl mx-auto px-6">
-      <p>&copy; {new Date().getFullYear()} Usman Khalid — London • Manchester • Remote</p>
+      <p>&copy; {new Date().getFullYear()} Strategic AI Advisory & Solutions Consulting</p>
     </div>
   </footer>
 );

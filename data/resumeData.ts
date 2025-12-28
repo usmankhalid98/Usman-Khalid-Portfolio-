@@ -3,7 +3,7 @@ import { Experience, Project, SkillCategory } from '../types';
 export const PERSONAL_INFO = {
   name: "Usman Khalid",
   headline: "AI Strategy & Solutions Consultant",
-  email: "contact@usmankhalid.co.uk",
+  email: "contact@usmankhalid.io",
   location: "Manchester, United Kingdom",
   linkedin: "www.linkedin.com/in/usman-khalid-uak/",
   github: "usmankhalid98",
