@@ -507,35 +507,23 @@ const Interests = () => (
 );
 
 const Contact = () => {
-  const [formData, setFormData] = useState({ name: '', email: '', confirmEmail: '', message: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
-  const [emailValid, setEmailValid] = useState(false);
-  const [emailsMatch, setEmailsMatch] = useState(false);
-
-  useEffect(() => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    setEmailValid(emailRegex.test(formData.email));
-    setEmailsMatch(formData.email !== '' && formData.email === formData.confirmEmail);
-  }, [formData.email, formData.confirmEmail]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!emailValid || !emailsMatch) return;
+    if (!formData.name || !formData.email || !formData.message) return;
 
     setStatus('sending');
     try {
       const response = await fetch("https://formspree.io/f/mlgrpwal", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Accept": "application/json" },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          message: formData.message
-        })
+        body: JSON.stringify(formData)
       });
       if (response.ok) {
         setStatus('success');
-        setFormData({ name: '', email: '', confirmEmail: '', message: '' });
+        setFormData({ name: '', email: '', message: '' });
         setTimeout(() => setStatus('idle'), 5000);
       } else {
         setStatus('error');
@@ -552,7 +540,7 @@ const Contact = () => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const canSubmit = formData.name && emailValid && emailsMatch && formData.message && status === 'idle';
+  const canSubmit = formData.name && formData.email && formData.message && status === 'idle';
 
   return (
     <section id="lets-talk-strategy" className="py-32 px-6 max-w-4xl mx-auto text-center">
@@ -586,25 +574,9 @@ const Contact = () => {
               <input required name="name" value={formData.name} onChange={handleChange} placeholder="Joe Bloggs" className="w-full bg-slate-300/30 border border-slate-300 rounded-2xl px-6 py-4 focus:ring-2 focus:ring-blue-500/20 focus:outline-none placeholder:text-slate-400 font-bold text-slate-800" />
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="text-xs font-black text-slate-500 uppercase ml-1">Email Address</label>
-                  {formData.email && (
-                    emailValid ? <Check size={14} className="text-emerald-600" /> : <AlertCircle size={14} className="text-red-500" />
-                  )}
-                </div>
-                <input required type="email" name="email" value={formData.email} onChange={handleChange} placeholder="joe@example.com" className={`w-full bg-slate-300/30 border ${formData.email && !emailValid ? 'border-red-400' : 'border-slate-300'} rounded-2xl px-6 py-4 focus:ring-2 focus:ring-blue-500/20 focus:outline-none placeholder:text-slate-400 font-bold text-slate-800`} />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="text-xs font-black text-slate-500 uppercase ml-1">Verify Email</label>
-                  {formData.confirmEmail && (
-                    emailsMatch ? <Check size={14} className="text-emerald-600" /> : <AlertCircle size={14} className="text-red-500" />
-                  )}
-                </div>
-                <input required type="email" name="confirmEmail" value={formData.confirmEmail} onChange={handleChange} placeholder="Repeat email..." className={`w-full bg-slate-300/30 border ${formData.confirmEmail && !emailsMatch ? 'border-red-400' : 'border-slate-300'} rounded-2xl px-6 py-4 focus:ring-2 focus:ring-blue-500/20 focus:outline-none placeholder:text-slate-400 font-bold text-slate-800`} />
-              </div>
+            <div className="space-y-2">
+              <label className="text-xs font-black text-slate-500 uppercase ml-1">Email Address</label>
+              <input required type="email" name="email" value={formData.email} onChange={handleChange} placeholder="joe@example.com" className="w-full bg-slate-300/30 border border-slate-300 rounded-2xl px-6 py-4 focus:ring-2 focus:ring-blue-500/20 focus:outline-none placeholder:text-slate-400 font-bold text-slate-800" />
             </div>
 
             <div className="space-y-2">
@@ -615,10 +587,6 @@ const Contact = () => {
             <button disabled={!canSubmit} type="submit" className={`w-full py-5 rounded-2xl font-black text-white flex items-center justify-center gap-3 transition-all uppercase tracking-widest text-xs shadow-lg ${canSubmit ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-90 active:scale-95 shadow-blue-500/20' : 'bg-slate-400 cursor-not-allowed opacity-50'}`}>
               {status === 'sending' ? <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div> : <> <Send size={18} /> Send Inbound </>}
             </button>
-            
-            {formData.confirmEmail && !emailsMatch && formData.email && emailValid && (
-              <p className="text-[10px] text-red-500 font-bold text-center uppercase tracking-tighter">Verification mismatch detected. Please re-enter your email.</p>
-            )}
           </form>
         )}
       </div>
