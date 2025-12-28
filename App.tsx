@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Mail, 
   MapPin, 
@@ -16,7 +17,15 @@ import {
   Send,
   CheckCircle,
   Award,
-  Terminal
+  Terminal,
+  AlertCircle,
+  Check,
+  MessageSquare,
+  X,
+  Bot,
+  User as UserIcon,
+  Loader2,
+  ChevronRight
 } from 'lucide-react';
 import { 
   PERSONAL_INFO, 
@@ -26,13 +35,185 @@ import {
   EDUCATION, 
   INTERESTS 
 } from './data/resumeData';
+import { GoogleGenAI } from "@google/genai";
+
+const AIConsultant = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState<{role: 'user' | 'model', text: string}[]>([
+    { role: 'model', text: "Hello! I'm Usman's Strategic AI Twin. How can I help you navigate AI strategy or cloud observability today?" }
+  ]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  const sendMessage = async () => {
+    if (!input.trim() || isLoading) return;
+
+    const userMessage = input.trim();
+    setInput('');
+    setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
+    setIsLoading(true);
+
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const systemInstruction = `You are the Strategic AI Digital Twin of Usman Khalid. 
+      Your purpose is to provide high-level AI strategy advice and answer questions about Usman's expertise.
+      
+      Usman's Background:
+      - Role: ${PERSONAL_INFO.headline}
+      - Profile: ${PERSONAL_INFO.profile}
+      - Key Skills: ${SKILL_CATEGORIES.map(c => c.category + ": " + c.skills.join(", ")).join("; ")}
+      - Experience Summary: ${PROFESSIONAL_EXPERIENCE.map(e => e.title + " at " + e.company).join(", ")}
+      
+      Response Style:
+      - Professional, strategic, visionary yet practical.
+      - Use frameworks like "AI Readiness," "Value Realization," or "Operational Observability."
+      - Keep responses concise and focused on business value.
+      - If asked about things outside Usman's expertise, bridge them back to his focus on AI strategy and technical execution.`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: [...messages.map(m => ({ role: m.role, parts: [{ text: m.text }] })), { role: 'user', parts: [{ text: userMessage }] }],
+        config: {
+          systemInstruction,
+          temperature: 0.7,
+        }
+      });
+
+      setMessages(prev => [...prev, { role: 'model', text: response.text || "I apologize, but I encountered a processing error in my strategic circuits. Could you rephrase that?" }]);
+    } catch (error) {
+      console.error("AI Error:", error);
+      setMessages(prev => [...prev, { role: 'model', text: "Strategic insight currently unavailable due to a connection error. Please try again." }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const suggestions = [
+    "What is your approach to LLM integration?",
+    "How do you handle AI governance?",
+    "Tell me about your ITSM experience.",
+    "Define your AI strategy framework."
+  ];
+
+  return (
+    <>
+      {/* Floating Button */}
+      <button 
+        onClick={() => setIsOpen(true)}
+        className={`fixed bottom-8 right-8 z-[60] p-4 bg-gradient-to-tr from-blue-600 to-indigo-700 text-white rounded-full shadow-2xl hover:scale-110 transition-all active:scale-95 group overflow-hidden ${isOpen ? 'opacity-0 scale-0 pointer-events-none' : 'opacity-100 scale-100'}`}
+        aria-label="Open AI Consultant"
+      >
+        <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+        <Bot size={28} className="relative z-10" />
+        <span className="absolute -top-1 -right-1 flex h-4 w-4">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-4 w-4 bg-blue-500"></span>
+        </span>
+      </button>
+
+      {/* Chat Window */}
+      <div className={`fixed inset-y-0 right-0 w-full md:w-[450px] bg-slate-100/95 backdrop-blur-xl z-[70] shadow-2xl border-l border-slate-300 transition-transform duration-500 transform ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="p-6 border-b border-slate-300 flex items-center justify-between bg-white/50">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white">
+                <Sparkles size={20} />
+              </div>
+              <div>
+                <h3 className="font-display font-bold text-slate-900 leading-none">Strategy Twin</h3>
+                <span className="text-[10px] text-emerald-600 font-black uppercase tracking-widest flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                  Systems Online
+                </span>
+              </div>
+            </div>
+            <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Messages */}
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth">
+            {messages.map((m, i) => (
+              <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300`}>
+                <div className={`flex gap-3 max-w-[85%] ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                  <div className={`w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center ${m.role === 'user' ? 'bg-indigo-100 text-indigo-700' : 'bg-blue-600 text-white shadow-md'}`}>
+                    {m.role === 'user' ? <UserIcon size={16} /> : <Bot size={16} />}
+                  </div>
+                  <div className={`p-4 rounded-2xl text-sm font-medium leading-relaxed ${m.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white border border-slate-300 text-slate-800 shadow-sm'}`}>
+                    {m.text}
+                  </div>
+                </div>
+              </div>
+            ))}
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="flex gap-3 max-w-[85%]">
+                  <div className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center bg-blue-600 text-white">
+                    <Bot size={16} />
+                  </div>
+                  <div className="p-4 rounded-2xl bg-white border border-slate-300 shadow-sm">
+                    <Loader2 size={18} className="animate-spin text-blue-600" />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Footer Input */}
+          <div className="p-6 border-t border-slate-300 bg-white/50">
+            {messages.length === 1 && !isLoading && (
+              <div className="flex flex-wrap gap-2 mb-6">
+                {suggestions.map((s, i) => (
+                  <button 
+                    key={i} 
+                    onClick={() => setInput(s)}
+                    className="text-[10px] font-black uppercase tracking-tight px-3 py-1.5 bg-slate-200 border border-slate-300 rounded-lg hover:bg-blue-600 hover:text-white transition-all text-slate-600"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="relative">
+              <textarea 
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+                placeholder="Ask me about AI strategy..."
+                className="w-full bg-slate-200 border border-slate-300 rounded-2xl pl-6 pr-14 py-4 focus:ring-2 focus:ring-blue-500/20 focus:outline-none placeholder:text-slate-500 text-sm font-bold text-slate-800 resize-none min-h-[56px]"
+                rows={1}
+              />
+              <button 
+                onClick={sendMessage}
+                disabled={!input.trim() || isLoading}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                <Send size={18} />
+              </button>
+            </div>
+            <p className="text-[9px] text-slate-400 mt-4 text-center font-black uppercase tracking-widest">Powered by Strategic Intelligence Twin 1.0</p>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
 
 const Navbar = () => {
   const handleScroll = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
     e.preventDefault();
     const element = document.getElementById(id);
     if (element) {
-      const offset = 80; // Adjusted for fixed navbar height
+      const offset = 80; 
       const bodyRect = document.body.getBoundingClientRect().top;
       const elementRect = element.getBoundingClientRect().top;
       const elementPosition = elementRect - bodyRect;
@@ -326,21 +507,35 @@ const Interests = () => (
 );
 
 const Contact = () => {
-  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', confirmEmail: '', message: '' });
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [emailValid, setEmailValid] = useState(false);
+  const [emailsMatch, setEmailsMatch] = useState(false);
+
+  useEffect(() => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    setEmailValid(emailRegex.test(formData.email));
+    setEmailsMatch(formData.email !== '' && formData.email === formData.confirmEmail);
+  }, [formData.email, formData.confirmEmail]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!emailValid || !emailsMatch) return;
+
     setStatus('sending');
     try {
       const response = await fetch("https://formspree.io/f/mlgrpwal", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Accept": "application/json" },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          message: formData.message
+        })
       });
       if (response.ok) {
         setStatus('success');
-        setFormData({ name: '', email: '', message: '' });
+        setFormData({ name: '', email: '', confirmEmail: '', message: '' });
         setTimeout(() => setStatus('idle'), 5000);
       } else {
         setStatus('error');
@@ -356,6 +551,8 @@ const Contact = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
+
+  const canSubmit = formData.name && emailValid && emailsMatch && formData.message && status === 'idle';
 
   return (
     <section id="lets-talk-strategy" className="py-32 px-6 max-w-4xl mx-auto text-center">
@@ -384,23 +581,44 @@ const Contact = () => {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-xs font-black text-slate-500 uppercase ml-1">Full Name</label>
+              <input required name="name" value={formData.name} onChange={handleChange} placeholder="Joe Bloggs" className="w-full bg-slate-300/30 border border-slate-300 rounded-2xl px-6 py-4 focus:ring-2 focus:ring-blue-500/20 focus:outline-none placeholder:text-slate-400 font-bold text-slate-800" />
+            </div>
+
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-500 uppercase ml-1">Full Name</label>
-                <input required name="name" value={formData.name} onChange={handleChange} placeholder="Joe Bloggs" className="w-full bg-slate-300/30 border border-slate-300 rounded-2xl px-6 py-4 focus:ring-2 focus:ring-blue-500/20 focus:outline-none placeholder:text-slate-400 font-bold text-slate-800" />
+                <div className="flex justify-between items-center">
+                  <label className="text-xs font-black text-slate-500 uppercase ml-1">Email Address</label>
+                  {formData.email && (
+                    emailValid ? <Check size={14} className="text-emerald-600" /> : <AlertCircle size={14} className="text-red-500" />
+                  )}
+                </div>
+                <input required type="email" name="email" value={formData.email} onChange={handleChange} placeholder="joe@example.com" className={`w-full bg-slate-300/30 border ${formData.email && !emailValid ? 'border-red-400' : 'border-slate-300'} rounded-2xl px-6 py-4 focus:ring-2 focus:ring-blue-500/20 focus:outline-none placeholder:text-slate-400 font-bold text-slate-800`} />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-500 uppercase ml-1">Email</label>
-                <input required type="email" name="email" value={formData.email} onChange={handleChange} placeholder="joe@example.com" className="w-full bg-slate-300/30 border border-slate-300 rounded-2xl px-6 py-4 focus:ring-2 focus:ring-blue-500/20 focus:outline-none placeholder:text-slate-400 font-bold text-slate-800" />
+                <div className="flex justify-between items-center">
+                  <label className="text-xs font-black text-slate-500 uppercase ml-1">Verify Email</label>
+                  {formData.confirmEmail && (
+                    emailsMatch ? <Check size={14} className="text-emerald-600" /> : <AlertCircle size={14} className="text-red-500" />
+                  )}
+                </div>
+                <input required type="email" name="confirmEmail" value={formData.confirmEmail} onChange={handleChange} placeholder="Repeat email..." className={`w-full bg-slate-300/30 border ${formData.confirmEmail && !emailsMatch ? 'border-red-400' : 'border-slate-300'} rounded-2xl px-6 py-4 focus:ring-2 focus:ring-blue-500/20 focus:outline-none placeholder:text-slate-400 font-bold text-slate-800`} />
               </div>
             </div>
+
             <div className="space-y-2">
               <label className="text-xs font-black text-slate-500 uppercase ml-1">Message</label>
               <textarea required name="message" value={formData.message} onChange={handleChange} rows={4} placeholder="Brief your project objective..." className="w-full bg-slate-300/30 border border-slate-300 rounded-2xl px-6 py-4 focus:ring-2 focus:ring-blue-500/20 focus:outline-none placeholder:text-slate-400 resize-none font-bold text-slate-800"></textarea>
             </div>
-            <button disabled={status === 'sending'} type="submit" className="w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl font-black text-white flex items-center justify-center gap-3 hover:opacity-90 active:scale-95 shadow-lg shadow-blue-500/20 uppercase tracking-widest text-xs">
+
+            <button disabled={!canSubmit} type="submit" className={`w-full py-5 rounded-2xl font-black text-white flex items-center justify-center gap-3 transition-all uppercase tracking-widest text-xs shadow-lg ${canSubmit ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-90 active:scale-95 shadow-blue-500/20' : 'bg-slate-400 cursor-not-allowed opacity-50'}`}>
               {status === 'sending' ? <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div> : <> <Send size={18} /> Send Inbound </>}
             </button>
+            
+            {formData.confirmEmail && !emailsMatch && formData.email && emailValid && (
+              <p className="text-[10px] text-red-500 font-bold text-center uppercase tracking-tighter">Verification mismatch detected. Please re-enter your email.</p>
+            )}
           </form>
         )}
       </div>
@@ -429,6 +647,7 @@ export default function App() {
         <Interests />
         <Contact />
       </div>
+      <AIConsultant />
       <Footer />
     </div>
   );
