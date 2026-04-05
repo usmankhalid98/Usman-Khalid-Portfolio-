@@ -8,5 +8,14 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
+    chunkSizeWarningLimit: 450,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'resume-data': ['./data/resumeData'],
+          'vendor': ['react', 'react-dom', 'lucide-react'],
+        },
+      },
+    },
   }
 });
